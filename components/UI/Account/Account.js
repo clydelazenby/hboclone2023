@@ -1,53 +1,81 @@
-
+import { useEffect } from "react";
+import { useStateContext } from "../../HBOProvider";
+import { useRouter } from "next/router";
+import ls from "local-storage";
 
 const Account = (props) => {
-  const loopComp = (comp, digit) => {
-    let thumbnails = [];
-    for(let index = 1; index <= digit; index++) {
-      thumbnails.push(comp)
-    }
+	const globalState = useStateContext();
+	const router = useRouter();
 
-    return thumbnails;
-  }
-  return(
-    <div className="account">
-      <div className="account__details">
-        <div className="account__title">My List</div>
-        <div className="account__watch-list">
-          {loopComp((<div className="account__watch-video">
-            <img src="https://cdn.shopify.com/s/files/1/0013/2874/2466/products/rick-and-morty-tv-invasion-poster-24-x-36-581_1024x.jpg?v=1616627934"/>
-            <div className="account__watch-overlay">
-              <div className="account__watch-buttons">
-                <div className="account__watch-circle">
-                  <i className="fas fa-play"/>
-                </div>
-                <div className="account__watch-circle">
-                  <i className="fas fa-times"/>
-                </div>
-              </div>
-            </div>
-          </div>), 6)}
-          
-        </div>
-      </div>
-      <div className="account__menu">
-        <ul className="account__main">
-          <li>
-            <a href="/" className="active">My List</a>
-          </li>
-        </ul>
-        <div className="side-nav__divider" />
-        <ul className="account__main">
-          <li>
-            <a href="/">Account</a>
-          </li>
-          <li>
-            <a href="/">Sign Out</a>
-          </li>
-        </ul>
-      </div>
-    </div>
-  )
-}
+
+	useEffect(() =>{
+		if(globalState.accountModalOpen) {
+			document.body.style.overflowY = 'hidden';
+		} else {
+			document.body.style.overflowY = 'auto';
+		}
+	}, [globalState.accountModalOpen])
+
+
+	const watchMedia = (url) => {
+		router.push(url);
+		globalState.setAccountModalOpenAction(!globalState.accountModalOpen)
+	}
+
+	const showWatchList = () => {
+		return globalState.watchList.map((item, index) => {
+			return(
+				<div className="account__watch-video" key={index}>
+					<img src={item.mediaUrl} />
+					<div className="account__watch-overlay">
+						<div className="account__watch-buttons">
+							<div className="account__watch-circle" onClick={() => watchMedia(`/${item.mediaType}/${item.mediaId}`)}>
+								<i className="fas fa-play" />
+							</div>
+							<div className="account__watch-circle" onClick={() => globalState.removeFromList(item.mediaId)}>
+								<i className="fas fa-times" />
+							</div>
+						</div>
+					</div>
+				</div>
+			)
+		})
+	}
+	const signOut = () => {
+		ls.remove('users')
+		router.push(`/`);
+	}
+	return (
+		<div
+			className={`account ${
+				globalState.accountModalOpen ? "account--active" : ""
+			}`}>
+			<div className="account__details">
+				<div className="account__title">My List</div>
+				<div className="account__watch-list">
+					{globalState.watchList !== null ? showWatchList() : 'Sorry No Movies Added'}
+				</div>
+			</div>
+			<div className="account__menu">
+				<ul className="account__main">
+					<li>
+						<a href="/" className="active">
+							My List
+						</a>
+					</li>
+				</ul>
+				<div className="side-nav__divider" />
+				<ul className="account__main">
+					<li onClick={signOut}>
+						<a >Account</a>
+					</li>
+					<li onClick={signOut}>
+						<a >Sign Out</a>
+					</li>
+				</ul>
+			</div>
+		</div>
+	);
+};
 
 export default Account;
